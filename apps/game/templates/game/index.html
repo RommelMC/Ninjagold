@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ninja Gold</title>
+    <style>
+    span{
+        display: inline-block;
+        border: 1px solid black;
+        padding: 5px;
+        width: 150px;
+    }
+    div>div>form{
+        vertical-align: top;
+        text-align: center;
+        display: inline-block;
+        border: 1px solid black;
+        width: 180px;
+        height:150px;
+        margin: 10px;
+    }
+    #wrapper{
+        padding-left: 20px;
+    }
+    .green{
+        color: green;
+    }
+    .red{
+        color: red;
+    }
+</style>
+<script src="https://unpkg.com/vue"></script>   
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="wrapper">
+        <div id="top">
+            Your Gold:
+            <span>[[gold]]</span>
+        </div>
+        <div id="opts">
+        <form v-on:submit.prevent='onSubmit("farm")' action="/process_money/farm" style="margin-left:0" method="post">
+            <!-- {%csrf_token%} -->
+            <h3>Farm</h3>
+            <p>(earns 10-20 golds)</p>
+            <input type="submit" value="Find Gold!">
+        </form>
+        <form v-on:submit.prevent='onSubmit("cave")' action="/process_money/cave" method="post">
+            <!-- {%csrf_token%} -->
+            <h3>Cave</h3>
+            <p>(earns 5-10 golds)</p>
+            <input type="submit" value="Find Gold!">
+        </form>
+        <form v-on:submit.prevent='onSubmit("house")' action="/process_money/house" method="post">
+            <!-- {%csrf_token%} -->
+            <h3>House</h3>
+            <p>(earns 2-5 golds)</p>
+            <input type="submit" value="Find Gold!">
+        </form>
+        <form v-on:submit.prevent='onSubmit("casino")' action="/process_money/casino" method="post">
+            <!-- {%csrf_token%} -->
+            <h3>Casino</h3>
+            <p>(earns/takes 0-50 golds)</p>
+            <input type="submit" value="Find Gold!">
+        </form>
+        </div>
+        <p style="margin:0">Activities:</p>
+        <div style="overflow-y: scroll; height: 150px; width: 500px; border: 1px solid black; padding: 5px;" id="activities">
+         <div v-for='item in log' v-bind:class='{green: item[1], red:invert(item[1])}'>[[ item[0] ]]</div> 
+        </div>
+
+        <form v-on:submit.prevent='reset' action="/restart">
+            <input type="submit" value="Restart">
+        </form>
+    </div>
+
+<script>
+    var vm= new Vue({
+        el:'#wrapper',
+        data:{
+            gold:0,
+            log:null,
+            token:null
+        },
+        methods:{
+            onSubmit:function(place){
+                var _this = this;
+                axios({
+                    method:'post',
+                    url: '/process_money/'+place,
+                    headers:{'X-CSRFToken': this.token}
+                }).then(function(res){
+                    _this.gold=res.data.gold;
+                    _this.log=res.data.activities;
+                }).then(function(){
+                    var el = document.getElementById("activities");
+                    el.scrollTop = el.scrollHeight
+                })
+            },
+            invert:function(item){
+                return !item;
+            },
+            reset:function(){
+                var _this = this;
+                axios({
+                    method:'post',
+                    url: '/restart',
+                    headers:{'X-CSRFToken': this.token}
+                }).then(function(res){
+                    _this.gold=res.data.gold;
+                    _this.log=res.data.activities;
+                })
+            }
+        },
+        created: function(){
+            var _this=this;
+            axios.get('/token').then(function(res){
+                _this.token=res.data.token
+                _this.gold=res.data.gold
+                _this.log=res.data.activities
+            })
+        },
+        delimiters: ['[[',']]']
+    })
+    
+    // var el = document.getElementById("activities");
+    // el.scrollTop = el.scrollHeight
+
+</script>
+</body>
+</html>
